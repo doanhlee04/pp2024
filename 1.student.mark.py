@@ -30,4 +30,4 @@ def input_marks(students, course):
             for student in students:
                 marks = float(input(f"Enter marks for {student.name} in {course.name}: "))
                 
-
+def intput :
