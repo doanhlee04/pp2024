@@ -116,7 +116,7 @@ def main():
     courses = input_course_info()
     
     grading_scale = {
-       19.0: 4.0,
+        19.0: 4.0,
         17.0: 3.5,
         15.0: 3.0,
         13.0: 2.5,
