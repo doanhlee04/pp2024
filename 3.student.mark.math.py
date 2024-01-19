@@ -1,5 +1,7 @@
 import math 
 import numpy as np
+import pandas as pd 
+
 
 class Student:
     def __init__(self, student_id, name, dob):
@@ -7,8 +9,9 @@ class Student:
         self.name = name
         self.dob = dob
         self.marks = {}  # Dictionary to store marks for different courses
-
+        
     def add_mark(self, course_id, marks):
+    
         self.marks[course_id] = marks
     
     def __str__(self):
@@ -20,20 +23,28 @@ class Course:
 
 
 #Input  Function
-def get_student_info():
-    student_id = input("Enter student ID: ")
-    student_name = input("Enter student name: ")
-    student_dob = input("Enter student date of birth (YYYY-MM-DD): ")
-    return Student(student_id, student_name, student_dob)
 
-def input_course_info():
-    num_courses = int(input("Enter the number of courses: "))
+def load_data_from_excel(excel_file):
+    students = []
     courses = []
-    for i in range(num_courses):
-        course_id = input("Enter Course code: ")
-        course_name = input("Enter course name: ")
-        courses.append(Course(course_id, course_name))
-    return courses
+    
+
+    # Read the first sheet as student data
+    df_students = pd.read_excel(excel_file, sheet_name=0)
+
+    for _, row in df_students.iterrows():
+        student = Student(row['id'], row['name'], row['dob'])
+        marks = [row[f"mark_{i}"] for i in range(1, 4)]
+        student.marks = {f"mark_{i}": marks[i-1] for i in range(1, 4)}
+        students.append(student)
+        
+    # Read the second sheet as course data
+    df_courses = pd.read_excel(excel_file, sheet_name=1)
+    for _, row in df_courses.iterrows():
+        courses.append(Course(row['id'], row['name']))
+    
+    return students, courses
+
 
 def select_course(courses):
     print("\nSelect a course to enroll by entering its index number:\n")
@@ -52,6 +63,7 @@ def input_marks(students, selected_course_id):
     for student in students:
         marks = float(input(f"Enter marks for {student.name} in {selected_course_id}: "))
         student.marks[selected_course_id] = marks
+    return students
 
 def select_student(students):
     print("\nSelect a student by entering its index number:\n")
@@ -83,10 +95,13 @@ def show_student_marks(students, selected_course_id):
     print(f"Student Marks for Course {selected_course_id}:")
     for student in students:
         marks = student.marks.get(selected_course_id, "N/A")
-        rounded_marks = math.floor(marks * 10) / 10 #rounded down mark
-        print(f"{student.name}: {rounded_marks:1f}")
+        if isinstance(marks, (int, float)):
+            rounded_marks = math.floor(marks * 10) / 10 # rounded down mark
+            print(f"{student.name}: {rounded_marks:1f}")
+        else:
+            print(f"{student.name}: {marks}")
     print()
-
+    
 def show_student_course_marks(students, courses, grading_scale):
     print("Select a student to show marks and GPA for all courses:")
     student = select_student(students)
@@ -112,8 +127,8 @@ def show_student_course_marks(students, courses, grading_scale):
 
 #Main
 def main():
-    students = []  # List to store student objects
-    courses = input_course_info()
+    excel_file = "Book1.xlsx"
+    students, courses = load_data_from_excel(excel_file)
     
     grading_scale = {
         19.0: 4.0,
@@ -129,42 +144,35 @@ def main():
 
     while True:
         print("\nChoose an option:")
-        print("1. Enroll students in a course and input marks")
-        print("2. List students")
-        print("3. List courses")
-        print("4. Show student marks for a given course")
-        print("5. Show student marks for every course with GPA ")
-        print("6. Input marks for a student")
-        print("7. Exit")
+        print("1. List students")
+        print("2. List courses")
+        print("3. Show student marks for a given course")
+        print("4. Show student marks for every course with GPA ")
+        print("5. Input marks for a student")
+        print("6. Exit")
 
-        choice = input("Enter your choice (1-7): ")
-
+        choice = input("Enter your choice (1-6): ")
         if choice == '1':
-            student = get_student_info()
-            students.append(student)
-            selected_course_id = select_course(courses)
-            input_marks(students, selected_course_id)
-        elif choice == '2':
             list_students(students)
-        elif choice == '3':
+        elif choice == '2':
             list_courses(courses)
-        elif choice == '4':
+        elif choice == '3':
             selected_course_id = select_course(courses)
             show_student_marks(students, selected_course_id)
-        elif choice == '5':
+        elif choice == '4':
                  show_student_course_marks(students,courses,grading_scale)
-        elif choice == '6':
+        elif choice == '5':
             student = select_student(students)
             if student:
                 selected_course_id = select_course(courses)
                 if selected_course_id:
                     student.add_mark(selected_course_id, float(input(f"Enter marks for {student.name} in {selected_course_id}: ")))
-                    
-        elif choice == '7':
+                    students = sorted(students, key=lambda student: student.calculate_gpa(grading_scale), reverse=True)
+        elif choice == '6':
             print("Exiting the program. Goodbye!")
             break
         else:
-            print("Invalid choice. Please enter a number between 1 and 7.")
+            print("Invalid choice. Please enter a number between 1 and 6.")
 
 if __name__ == '__main__':
     main()
